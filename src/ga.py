@@ -7,6 +7,7 @@ import random
 import shutil
 import time
 import math
+import random
 
 width = 200
 height = 16
@@ -343,10 +344,50 @@ class Individual_DE(object):
 Individual = Individual_Grid
 
 
-def generate_successors(population):
+def generate_successors(population, method):
     results = []
     # STUDENT Design and implement this
     # Hint: Call generate_children() on some individuals and fill up results.
+    
+    # ROULETTE ----------------------------------------------------------------------
+    if method == 0:
+        summation = 0
+        for node in population:
+            summation = summation + node.fitness()
+
+        fitness_ratios = []
+        for node in population:
+            fitness_ratios.append(node.fitness() / summation)
+
+        # -----------------------------------------------------------------------------
+        # https://stackoverflow.com/questions/298301/roulette-wheel-selection-algorithm
+        # -----------------------------------------------------------------------------
+
+        probs = [sum(fitness_ratios[:i+1]) for i in range(len(fitness_ratios))]
+
+        new_pop = []
+
+        for n in range(len(population)):
+            rand = random.uniform(0, 1)
+            for (index, member) in enumerate(population):
+                if rand <= probs[index]:
+                    new_pop.append(member)
+        # -----------------------------------------------------------------------------
+
+        if len(new_pop) % 2 == 1:
+            new_pop.append(random.choice(population))
+
+        i = 0
+        j = 1
+        while j < len(new_pop):
+            results.append(new_pop[i].generate_children(new_pop[j]))
+            i += 1
+            j = i + 1    
+
+    # TOURNAMENT -------------------------------------------------------------------------
+    #else:
+        
+
     return results
 
 
@@ -394,7 +435,8 @@ def ga():
                     break
                 # STUDENT Also consider using FI-2POP as in the Sorenson & Pasquier paper
                 gentime = time.time()
-                next_population = generate_successors(population)
+                method = 1
+                next_population = generate_successors(population, method)
                 gendone = time.time()
                 print("Generated successors in:", gendone - gentime, "seconds")
                 # Calculate fitness in batches in parallel
