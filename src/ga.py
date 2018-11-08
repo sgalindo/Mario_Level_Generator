@@ -72,8 +72,8 @@ class Individual_Grid(object):
         left = 1
         right = width - 1
         for y in range(height):
-            for x in range(left, right):
-                pass
+            for x in range(left, right):       
+                genome[y][x] = random.choice(options)
         return genome
 
     # Create zero or more children from self and other
@@ -83,12 +83,18 @@ class Individual_Grid(object):
         # do crossover with other
         left = 1
         right = width - 1
+        value = 0
         for y in range(height):
             for x in range(left, right):
                 # STUDENT Which one should you take?  Self, or other?  Why?
                 # STUDENT consider putting more constraints on this to prevent pipes in the air, etc
-                pass
+                if value % 2 == 0:
+                    new_genome[y][x] = self.genome[y][x]
+                else:
+                    new_genome[y][x] = other.genome[y][x]
+                value += 1 
         # do mutation; note we're returning a one-element tuple here
+        self.mutate(new_genome)
         return (Individual_Grid(new_genome),)
 
     # Turn the genome into a level string (easy for this genome)
@@ -367,7 +373,7 @@ def generate_successors(population, method):
 
         new_pop = []
 
-        for n in range(len(population)):
+        for n in range(int(len(population) / 2)):
             rand = random.uniform(0, 1)
             for (index, member) in enumerate(population):
                 if rand <= probs[index]:
@@ -383,10 +389,6 @@ def generate_successors(population, method):
             results.append(new_pop[i].generate_children(new_pop[j]))
             i += 1
             j = i + 1    
-
-    # TOURNAMENT -------------------------------------------------------------------------
-    #else:
-        
 
     return results
 
@@ -435,7 +437,7 @@ def ga():
                     break
                 # STUDENT Also consider using FI-2POP as in the Sorenson & Pasquier paper
                 gentime = time.time()
-                method = 1
+                method = 0
                 next_population = generate_successors(population, method)
                 gendone = time.time()
                 print("Generated successors in:", gendone - gentime, "seconds")
