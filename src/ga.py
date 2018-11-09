@@ -22,8 +22,8 @@ options = [
     "|",  # a pipe segment
     "T",  # a pipe top
     "E",  # an enemy
-    #"f",  # a flag, do not generate
-    #"v",  # a flagpole, do not generate
+    "f",  # a flag, do not generate
+    "v",  # a flagpole, do not generate
     #"m"  # mario's start position, do not generate
 ]
 
@@ -46,7 +46,7 @@ class Individual_Grid(object):
         # Default fitness function: Just some arbitrary combination of a few criteria.  Is it good?  Who knows?
         # STUDENT Modify this, and possibly add more metrics.  You can replace this with whatever code you like.
         coefficients = dict(
-            meaningfulJumpVariance=0.5,
+            meaningfulJumpVariance=0.5, 
             negativeSpace=0.6,
             pathPercentage=0.5,
             emptyPercentage=0.6,
@@ -69,11 +69,51 @@ class Individual_Grid(object):
         # STUDENT also consider weighting the different tile types so it's not uniformly random
         # STUDENT consider putting more constraints on this to prevent pipes in the air, etc
 
+        #ground = [options[0], options[1], options[6]]
+        above_ground = [options[2], options[3], options[4]]
+
         left = 1
-        right = width - 1
+        right = width - 2
+
         for y in range(height):
-            for x in range(left, right):       
-                genome[y][x] = random.choice(options)
+            for x in range(left, right):
+                if random.uniform(0, 1) < 0.4:
+                    rand = random.uniform(0, 1)
+                    if y == height - 1: # GROUND
+                        if 0.5 <= rand:
+                            genome[y][x] = options[1] 
+                        elif 0.2 < rand and rand < 0.5:
+                            genome[y][x] = options[0]
+                        else:
+                            genome[y][x] = options[6]  
+                    elif y in range(height - 6, height - 2): # ABOVE GROUND
+                        if genome[y+1][x] == options[6]:
+                            genome[y][x] = options[7]
+                        elif 0.6 <= rand:
+                            genome[y][x] = options[0] # space
+                        elif 0.4 <= rand and rand < 0.6: 
+                            genome[y][x] = options[5] # break block
+                        elif 0.35 <= rand and rand < 0.4:
+                            genome[y][x] = options[8] # enemy
+                        else:
+                            genome[y][x] = random.choice(above_ground)
+                    else: # ABOVE ABOVE GROUND
+                        genome[y][x] = options[0]
+                
+                # FLAGPOLE 
+                if x == width - 1 and y == height - 2:
+                    genome[y][x] = options[1]
+                elif x == width - 1 and y == height - 3:
+                    genome[y][x] = options[10]
+                elif x == width - 1 and y == height - 4:
+                    genome[y][x] = options[10]
+                elif x == width - 1 and y == height - 5:
+                    genome[y][x] = options[10]
+                elif x == width - 1 and y == height - 6:
+                    genome[y][x] = options[10]
+                elif x == width - 1 and y == height - 7:
+                    genome[y][x] = options[9]
+        
         return genome
 
     # Create zero or more children from self and other
@@ -81,18 +121,52 @@ class Individual_Grid(object):
         new_genome = copy.deepcopy(self.genome)
         # Leaving first and last columns alone...
         # do crossover with other
+
         left = 1
         right = width - 1
-        value = 0
+        """
+        xIndex = random.randint(left, right)
         for y in range(height):
             for x in range(left, right):
                 # STUDENT Which one should you take?  Self, or other?  Why?
                 # STUDENT consider putting more constraints on this to prevent pipes in the air, etc
-                if value % 2 == 0:
+                if x < xIndex:
                     new_genome[y][x] = self.genome[y][x]
                 else:
                     new_genome[y][x] = other.genome[y][x]
-                value += 1 
+        """
+        ground = [options[0], options[1], options[6]]
+        above_ground = [options[0], options[2], options[3], options[4], options[5], options[8]]
+
+        for y in range(height):
+            for x in range(left, right):
+                if y == height - 1: # GROUND
+                    if self.genome[y][x] in ground:
+                        new_genome[y][x] = self.genome[y][x]
+                    else:
+                        new_genome[y][x] = other.genome[y][x] 
+                elif y in range(height - 6, height - 2): # ABOVE GROUND
+                    if self.genome[y][x] in above_ground:
+                        new_genome[y][x] = self.genome[y][x]
+                    else:
+                        new_genome[y][x] = other.genome[y][x] 
+                else: # ABOVE ABOVE GROUND
+                    new_genome[y][x] = options[0]
+                
+                # FLAGPOLE 
+                if x == width - 1 and y == height - 2:
+                    new_genome[y][x] = options[1]
+                elif x == width - 1 and y == height - 3:
+                    new_genome[y][x] = options[10]
+                elif x == width - 1 and y == height - 4:
+                    new_genome[y][x] = options[10]
+                elif x == width - 1 and y == height - 5:
+                    new_genome[y][x] = options[10]
+                elif x == width - 1 and y == height - 6:
+                    new_genome[y][x] = options[10]
+                elif x == width - 1 and y == height - 7:
+                    new_genome[y][x] = options[9]
+
         # do mutation; note we're returning a one-element tuple here
         self.mutate(new_genome)
         return (Individual_Grid(new_genome),)
@@ -358,38 +432,51 @@ def generate_successors(population, method):
     # ROULETTE ----------------------------------------------------------------------
     if method == 0:
         summation = 0
-        for node in population:
-            summation = summation + node.fitness()
-
-        fitness_ratios = []
-        for node in population:
-            fitness_ratios.append(node.fitness() / summation)
-
-        # -----------------------------------------------------------------------------
-        # https://stackoverflow.com/questions/298301/roulette-wheel-selection-algorithm
-        # -----------------------------------------------------------------------------
-
-        probs = [sum(fitness_ratios[:i+1]) for i in range(len(fitness_ratios))]
-
         new_pop = []
+        normal_fit = {}
 
-        for n in range(int(len(population) / 2)):
+        min_fitness = math.inf
+        max_fitness = 0
+
+        for node in population:
+            current_fitness = node.fitness()
+            if current_fitness < min_fitness:
+                min_fitness = current_fitness
+            if current_fitness > max_fitness:
+                max_fitness = current_fitness
+
+        for node in population:
+            normal_fit[node] = (node.fitness() - min_fitness) / (max_fitness - min_fitness)
+            summation = summation + normal_fit[node]
+
+        print("Total fitness: ", str(summation))
+        offset = 0
+        probs = {}
+
+        for person in population:
+            probs[person] = offset + (normal_fit[node] / summation)
+            offset += probs[person]
+            
+        for i in range(len(population)):
+            current_person = population[0]
             rand = random.uniform(0, 1)
-            for (index, member) in enumerate(population):
-                if rand <= probs[index]:
-                    new_pop.append(member)
-        # -----------------------------------------------------------------------------
+            for person in population:
+                if probs[person] > rand:
+                    break
+                current_person = person
+            new_pop.append(current_person)
 
         if len(new_pop) % 2 == 1:
             new_pop.append(random.choice(population))
+
+        print("New_pop length: ", str(len(new_pop)))
 
         i = 0
         j = 1
         while j < len(new_pop):
             results.append(new_pop[i].generate_children(new_pop[j]))
             i += 1
-            j = i + 1    
-
+            j = i + 1   
     return results
 
 
