@@ -74,7 +74,7 @@ public class SMBCamera : MonoBehaviour {
 			SMBGameWorld.Instance.LockRightX - _width * 0.5f);
 
 		cameraPos.y = Mathf.Clamp (cameraPos.y, _height * 0.5f - SMBGameWorld.Instance.LockDownY, 
-			SMBGameWorld.Instance.LockUpY - _height * 0.5f);
+			9999999);
 
 		transform.position = cameraPos;
 	}

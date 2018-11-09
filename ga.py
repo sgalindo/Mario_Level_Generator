@@ -13,18 +13,18 @@ width = 200
 height = 16
 
 options = [
-    "-",  # an empty space
-    "X",  # a solid wall
-    "?",  # a question mark block with a coin
-    "M",  # a question mark block with a mushroom
-    "B",  # a breakable block
-    "o",  # a coin
-    "|",  # a pipe segment
-    "T",  # a pipe top
-    "E",  # an enemy
-    "f",  # a flag, do not generate
-    "v",  # a flagpole, do not generate
-    #"m"  # mario's start position, do not generate
+    "-",  # an empty space                           0
+    "X",  # a solid wall                             1
+    "?",  # a question mark block with a coin        2
+    "M",  # a question mark block with a mushroom    3
+    "B",  # a breakable block                        4
+    "o",  # a coin                                   5
+    "|",  # a pipe segment                           6
+    "T",  # a pipe top                               7
+    "E",  # an enemy                                 8
+    "f",  # a flag, do not generate                  9
+    "v",  # a flagpole, do not generate             10
+    #"m"  # mario's start position, do not generate 11 
 ]
 
 # The level as a grid of tiles
@@ -83,12 +83,12 @@ class Individual_Grid(object):
                         if 0.5 <= rand:
                             genome[y][x] = options[1] 
                         elif 0.2 < rand and rand < 0.5:
-                            genome[y][x] = options[0]
+                            genome[y][x] = options[0] 
                         else:
                             genome[y][x] = options[6]  
-                    elif y in range(height - 6, height - 2): # ABOVE GROUND
+                    elif y in range(height - 6, height - 1): # ABOVE GROUND
                         if genome[y+1][x] == options[6]:
-                            genome[y][x] = options[7]
+                            genome[y][x] = options[7] # pipe top
                         elif 0.6 <= rand:
                             genome[y][x] = options[0] # space
                         elif 0.4 <= rand and rand < 0.6: 
@@ -99,20 +99,6 @@ class Individual_Grid(object):
                             genome[y][x] = random.choice(above_ground)
                     else: # ABOVE ABOVE GROUND
                         genome[y][x] = options[0]
-                
-                # FLAGPOLE 
-                if x == width - 1 and y == height - 2:
-                    genome[y][x] = options[1]
-                elif x == width - 1 and y == height - 3:
-                    genome[y][x] = options[10]
-                elif x == width - 1 and y == height - 4:
-                    genome[y][x] = options[10]
-                elif x == width - 1 and y == height - 5:
-                    genome[y][x] = options[10]
-                elif x == width - 1 and y == height - 6:
-                    genome[y][x] = options[10]
-                elif x == width - 1 and y == height - 7:
-                    genome[y][x] = options[9]
         
         return genome
 
@@ -124,28 +110,26 @@ class Individual_Grid(object):
 
         left = 1
         right = width - 1
-        """
-        xIndex = random.randint(left, right)
-        for y in range(height):
-            for x in range(left, right):
-                # STUDENT Which one should you take?  Self, or other?  Why?
-                # STUDENT consider putting more constraints on this to prevent pipes in the air, etc
-                if x < xIndex:
-                    new_genome[y][x] = self.genome[y][x]
-                else:
-                    new_genome[y][x] = other.genome[y][x]
-        """
+
         ground = [options[0], options[1], options[6]]
         above_ground = [options[0], options[2], options[3], options[4], options[5], options[8]]
 
         for y in range(height):
             for x in range(left, right):
+                if new_genome[y][x] == options[10] or new_genome[y][x] == options[9]: # If there are any extra flagpole pieces, replace them with '-'
+                    new_genome[y][x] = options[0]
                 if y == height - 1: # GROUND
                     if self.genome[y][x] in ground:
                         new_genome[y][x] = self.genome[y][x]
                     else:
                         new_genome[y][x] = other.genome[y][x] 
                 elif y in range(height - 6, height - 2): # ABOVE GROUND
+                    # Replace any floating pipes and pipe tops
+                    if new_genome[y][x] == options[6] and new_genome[y+1][x] != options[6]:
+                        new_genome[y][x] = options[0]
+                    if new_genome[y][x] == options[7] and new_genome[y+1][x] != options[6]:
+                        new_genome[y][x] = options[0]
+
                     if self.genome[y][x] in above_ground:
                         new_genome[y][x] = self.genome[y][x]
                     else:
@@ -153,23 +137,38 @@ class Individual_Grid(object):
                 else: # ABOVE ABOVE GROUND
                     new_genome[y][x] = options[0]
                 
-                # FLAGPOLE 
-                if x == width - 1 and y == height - 2:
-                    new_genome[y][x] = options[1]
-                elif x == width - 1 and y == height - 3:
-                    new_genome[y][x] = options[10]
-                elif x == width - 1 and y == height - 4:
-                    new_genome[y][x] = options[10]
-                elif x == width - 1 and y == height - 5:
-                    new_genome[y][x] = options[10]
-                elif x == width - 1 and y == height - 6:
-                    new_genome[y][x] = options[10]
-                elif x == width - 1 and y == height - 7:
-                    new_genome[y][x] = options[9]
+                # PLACE FLAGPOLE 
+                # if x == width - 1 and y == height - 2:
+                #     new_genome[y][x] = options[1]
+                # elif x == width - 1 and y == height - 3:
+                #     new_genome[y][x] = options[10]
+                # elif x == width - 1 and y == height - 4:
+                #     new_genome[y][x] = options[10]
+                # elif x == width - 1 and y == height - 5:
+                #     new_genome[y][x] = options[10]
+                # elif x == width - 1 and y == height - 6:
+                #     new_genome[y][x] = options[10]
+                # elif x == width - 1 and y == height - 7:
+                #     new_genome[y][x] = options[9]
+
+        # Make sure the first column is empty
+        for y in range(height-2):
+            new_genome[y][0] = options[0]
+
+        # Make sure there's a flagpole in the end
+        for y in range(height - 1):
+            if y <= height - 8:
+                new_genome[y][width-1] = options[0]
+            elif y == height - 7:
+                new_genome[y][width-1] = options[9]
+            elif y < height - 2:
+                new_genome[y][width-1] = options[10]
+            else:
+                new_genome[y][width-1] = options[1]
 
         # do mutation; note we're returning a one-element tuple here
         self.mutate(new_genome)
-        return (Individual_Grid(new_genome),)
+        return (Individual_Grid(new_genome))
 
     # Turn the genome into a level string (easy for this genome)
     def to_level(self):
@@ -500,6 +499,7 @@ def ga():
                               batch_size)
         init_done = time.time()
         print("Created and calculated initial population statistics in:", init_done - init_time, "seconds")
+        print("Initial population size: ", str(len(population)))
         generation = 0
         start = time.time()
         now = start
