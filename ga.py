@@ -410,7 +410,7 @@ class Individual_DE(object):
         return Individual_DE(g)
 
 
-Individual = Individual_DE
+Individual = Individual_Grid
 
 
 def generate_successors(population, method):
@@ -419,6 +419,7 @@ def generate_successors(population, method):
     # Hint: Call generate_children() on some individuals and fill up results.
     
     # ROULETTE ----------------------------------------------------------------------
+    #inspired by: https://stackoverflow.com/questions/44430194/roulette-wheel-selection-with-positive-and-negative-fitness-values-for-minimizat
     if method == 0:
         summation = 0
         new_pop = []
@@ -466,6 +467,19 @@ def generate_successors(population, method):
             results.append(Individual.generate_children(new_pop[i], new_pop[j])[0])
             i += 1
             j = i + 1   
+    #######Tournament selection#################
+    #help from: https://stackoverflow.com/questions/4873205/genetic-algorithm-tournament-selection
+    else:
+        new_pop = []
+        for i in range(len(population)):
+            tournament= []
+            for n in range(int(len(population)/10)):
+                tournament.append(random.choice(population))
+            parent1 = max(tournament, key=Individual.fitness)
+            tournament.remove(parent1)
+            parent2 = max(tournament, key=Individual.fitness)
+            #print("generating")
+            results.append(Individual.generate_children(parent1, parent2)[0])
     return results
 
 
@@ -514,7 +528,7 @@ def ga():
                     break
                 # STUDENT Also consider using FI-2POP as in the Sorenson & Pasquier paper
                 gentime = time.time()
-                method = 0
+                method = 1
                 next_population = generate_successors(population, method)
                 gendone = time.time()
                 print("Generated successors in:", gendone - gentime, "seconds")
