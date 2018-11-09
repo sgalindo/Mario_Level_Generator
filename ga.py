@@ -86,7 +86,7 @@ class Individual_Grid(object):
                             genome[y][x] = options[0] 
                         else:
                             genome[y][x] = options[6]  
-                    elif y in range(height - 6, height - 1): # ABOVE GROUND
+                    elif y in range(height - 6, height - 1) and x > 10: # ABOVE GROUND
                         if genome[y+1][x] == options[6]:
                             genome[y][x] = options[7] # pipe top
                         elif 0.6 <= rand:
@@ -136,39 +136,28 @@ class Individual_Grid(object):
                         new_genome[y][x] = other.genome[y][x] 
                 else: # ABOVE ABOVE GROUND
                     new_genome[y][x] = options[0]
-                
-                # PLACE FLAGPOLE 
-                # if x == width - 1 and y == height - 2:
-                #     new_genome[y][x] = options[1]
-                # elif x == width - 1 and y == height - 3:
-                #     new_genome[y][x] = options[10]
-                # elif x == width - 1 and y == height - 4:
-                #     new_genome[y][x] = options[10]
-                # elif x == width - 1 and y == height - 5:
-                #     new_genome[y][x] = options[10]
-                # elif x == width - 1 and y == height - 6:
-                #     new_genome[y][x] = options[10]
-                # elif x == width - 1 and y == height - 7:
-                #     new_genome[y][x] = options[9]
 
         # Make sure the first column is empty
         for y in range(height-2):
             new_genome[y][0] = options[0]
+
+        for y in range(height-1):
+            new_genome[y][width-2] = options[0]
 
         # Make sure there's a flagpole in the end
         for y in range(height - 1):
             if y <= height - 8:
                 new_genome[y][width-1] = options[0]
             elif y == height - 7:
-                new_genome[y][width-1] = options[9]
-            elif y < height - 2:
                 new_genome[y][width-1] = options[10]
+            elif y < height - 2:
+                new_genome[y][width-1] = options[9]
             else:
                 new_genome[y][width-1] = options[1]
 
         # do mutation; note we're returning a one-element tuple here
         self.mutate(new_genome)
-        return (Individual_Grid(new_genome))
+        return (Individual_Grid(new_genome), )
 
     # Turn the genome into a level string (easy for this genome)
     def to_level(self):
@@ -238,17 +227,18 @@ class Individual_DE(object):
         # STUDENT Add more metrics?
         # STUDENT Improve this with any code you like
         coefficients = dict(
-            meaningfulJumpVariance=0.5,
+            meaningfulJumpVariance=0.5, # 0.5
             negativeSpace=0.6,
             pathPercentage=0.5,
             emptyPercentage=0.6,
-            linearity=-0.5,
+            linearity=-0.5, # 0.5
             solvability=2.0
         )
         penalties = 0
         # STUDENT For example, too many stairs are unaesthetic.  Let's penalize that
         if len(list(filter(lambda de: de[1] == "6_stairs", self.genome))) > 5:
             penalties -= 2
+
         # STUDENT If you go for the FI-2POP extra credit, you can put constraint calculation in here too and cache it in a new entry in __slots__.
         self._fitness = sum(map(lambda m: coefficients[m] * measurements[m],
                                 coefficients)) + penalties
@@ -420,7 +410,7 @@ class Individual_DE(object):
         return Individual_DE(g)
 
 
-Individual = Individual_Grid
+Individual = Individual_DE
 
 
 def generate_successors(population, method):
@@ -473,7 +463,7 @@ def generate_successors(population, method):
         i = 0
         j = 1
         while j < len(new_pop):
-            results.append(new_pop[i].generate_children(new_pop[j]))
+            results.append(Individual.generate_children(new_pop[i], new_pop[j])[0])
             i += 1
             j = i + 1   
     return results
@@ -546,7 +536,7 @@ if __name__ == "__main__":
     print("Best fitness: " + str(best.fitness()))
     now = time.strftime("%m_%d_%H_%M_%S")
     # STUDENT You can change this if you want to blast out the whole generation, or ten random samples, or...
-    for k in range(0, 10):
-        with open("levels/" + now + "_" + str(k) + ".txt", 'w') as f:
-            for row in final_gen[k].to_level():
-                f.write("".join(row) + "\n")
+    #for k in range(0, 10):
+    #    with open("levels/" + now + "_" + str(k) + ".txt", 'w') as f:
+    #        for row in final_gen[k].to_level():
+    #            f.write("".join(row) + "\n")
