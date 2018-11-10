@@ -1,0 +1,72 @@
+Harmen Kang & Salvador Galindo
+Program 6: Evolving Mario levels
+
+Individual Grid ---------------------------------------------------------
+
+    In our program we modified the generate_successors function
+    and we modified the generate_chilren and mutate functions in
+    the Individual_Grid representation on the level. The selection
+    strategies we used in generate_successors were: Roulette Wheel select
+    and Tournament select. We did not really alter fitness values 
+    for our elements. However, in our mutate and generate_children
+    functions we did put constraints on what kinds of elements would
+    be put on different coordinates. We made three seperate levels on 
+    the vertical axis. The bottom one was the ground where we made it 
+    such that only pipes, empty space, and walls could spawn. We then
+    altered the probabilities of mutating into each of those elements
+    with different preference to different items. The next level up was
+    where we would spawn enemies, different blocks, and pipe tops. The
+    final level at the highest level of the vertical axis we made such 
+    that it was always empty space so that the level would not be too
+    cluttered. Our crossover function also used this system of levels 
+    along the vertical axis to determine which of the two parent genomes
+    to draw from. If one genome had an element that would work better
+    and a specific grid point then the child would inherit that trait
+    from crossover. The crossover function also made sure to always put
+    a start and finish (flagpole) in each individual since the flagpole 
+    was being replaced when a random Individual was created for the 
+    initial population. In our mutate function we made it such that each 
+    element of an individual has a 40% chance of mutation.
+
+Individual DE -------------------------------------------------------------------
+
+    The calculate_fitness() function was modified to favor more variety in the levels.
+    The weights of values such as higher meaningfulJumpVariance, lower negativeSpace,
+    and lower linearity seemed to do well for variety. We also added a couple constraints
+    such as favoring a level if it has more than 5 enemies and platforms for a more 
+    engaging experience.
+
+    The generate_children() function that is provided to us takes the genes up
+    until one random point in self and all the genes after a random point in other.
+    These two pieces of the genomes are then combined to create a new genome to
+    mutate. However, there is also a second new genome that is created with 
+    overlapping genes from both self and other. This second genome is also mutated.
+    This function had to modified to check if the self individual or the other individual
+    were empty since there was an empty range error being thrown if either one was empty.
+
+    The mutate() function only has a 10% chance to mutate. If so, a random piece of 
+    the genome is chosen to be modified. This modification depends on what type of
+    design element it is (i.e. if it is a block, we can offset its height, or the width
+    of a hole, etc.) The offset_by_upto function is called on the specified gene to
+    vary the value by some (min, mix) range. We slightly modified this function by 
+    changing the increasing the min height in order to avoid there being any items 
+    that are out of reach. 
+
+Favorite Levels -----------------------------------------------------------------
+
+    Our favorite level only took about 4 generations to build. The
+    average generation time of which was about 20 seconds per generation.
+    The level was fun because it had a good ballance between enemies
+    and platforming challenges. I was also surprised at the difficulty
+    of the level because despite having a relatively small amount of 
+    gaps in the floor that one can fall through, they are placed in such
+    a way that they are pretty challenging gaps to clear once you reach
+    them. 
+
+    Our second favorite level was generated after 7 generations. The generations
+    each took 20 seconds or so at first but after generation 5 slowed
+    down until it took 28 seconds for generation 7. This level was 
+    fun in my eyes because it was a bit more open that the first one
+    so it allowed for more room to manuever throughout the map. The
+    first generation map was relatively empty but as every generation 
+    progressed the map got more and more filled with items.

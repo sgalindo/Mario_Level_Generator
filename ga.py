@@ -156,7 +156,8 @@ class Individual_Grid(object):
                 new_genome[y][width-1] = options[1]
 
         # do mutation; note we're returning a one-element tuple here
-        self.mutate(new_genome)
+        if random.uniform(0, 1) <= 0.4:
+            self.mutate(new_genome)
         return (Individual_Grid(new_genome), )
 
     # Turn the genome into a level string (easy for this genome)
@@ -227,17 +228,21 @@ class Individual_DE(object):
         # STUDENT Add more metrics?
         # STUDENT Improve this with any code you like
         coefficients = dict(
-            meaningfulJumpVariance=0.5, # 0.5
-            negativeSpace=0.6,
+            meaningfulJumpVariance=1, # 0.5
+            negativeSpace=0.1, # 0.6
             pathPercentage=0.5,
             emptyPercentage=0.6,
-            linearity=-0.5, # 0.5
+            linearity=-0.1, # 0.5
             solvability=2.0
         )
         penalties = 0
         # STUDENT For example, too many stairs are unaesthetic.  Let's penalize that
         if len(list(filter(lambda de: de[1] == "6_stairs", self.genome))) > 5:
             penalties -= 2
+        if len(list(filter(lambda de: de[1] == "2_enemy", self.genome))) > 5:
+            penalties += 2
+        if len(list(filter(lambda de: de[1] == "1_platform", self.genome))) > 6:
+            penalties += 2
 
         # STUDENT If you go for the FI-2POP extra credit, you can put constraint calculation in here too and cache it in a new entry in __slots__.
         self._fitness = sum(map(lambda m: coefficients[m] * measurements[m],
@@ -265,7 +270,7 @@ class Individual_DE(object):
                 if choice < 0.33:
                     x = offset_by_upto(x, width / 8, min=1, max=width - 2)
                 elif choice < 0.66:
-                    y = offset_by_upto(y, height / 2, min=0, max=height - 1)
+                    y = offset_by_upto(y, height / 2, min=height - 7, max=height - 1)
                 else:
                     breakable = not de[3]
                 new_de = (x, de_type, y, breakable)
@@ -275,7 +280,7 @@ class Individual_DE(object):
                 if choice < 0.33:
                     x = offset_by_upto(x, width / 8, min=1, max=width - 2)
                 elif choice < 0.66:
-                    y = offset_by_upto(y, height / 2, min=0, max=height - 1)
+                    y = offset_by_upto(y, height / 2, min=height - 7, max=height - 1)
                 else:
                     has_powerup = not de[3]
                 new_de = (x, de_type, y, has_powerup)
@@ -284,7 +289,7 @@ class Individual_DE(object):
                 if choice < 0.5:
                     x = offset_by_upto(x, width / 8, min=1, max=width - 2)
                 else:
-                    y = offset_by_upto(y, height / 2, min=0, max=height - 1)
+                    y = offset_by_upto(y, height / 2, min=height - 7, max=height - 1)
                 new_de = (x, de_type, y)
             elif de_type == "7_pipe":
                 h = de[2]
@@ -319,7 +324,7 @@ class Individual_DE(object):
                 elif choice < 0.5:
                     w = offset_by_upto(w, 8, min=1, max=width - 2)
                 elif choice < 0.75:
-                    y = offset_by_upto(y, height, min=0, max=height - 1)
+                    y = offset_by_upto(y, height, min=height - 7, max=height - 1)
                 else:
                     madeof = random.choice(["?", "X", "B"])
                 new_de = (x, de_type, w, y, madeof)
@@ -331,8 +336,14 @@ class Individual_DE(object):
 
     def generate_children(self, other):
         # STUDENT How does this work?  Explain it in your writeup.
-        pa = random.randint(0, len(self.genome) - 1)
-        pb = random.randint(0, len(other.genome) - 1)
+        if len(self.genome) != 0:
+            pa = random.randint(0, len(self.genome) - 1)
+        else:
+            pa = 0
+        if len(other.genome) != 0:
+            pb = random.randint(0, len(other.genome) - 1)
+        else:
+            pb = 0
         a_part = self.genome[:pa] if len(self.genome) > 0 else []
         b_part = other.genome[pb:] if len(other.genome) > 0 else []
         ga = a_part + b_part
@@ -410,7 +421,7 @@ class Individual_DE(object):
         return Individual_DE(g)
 
 
-Individual = Individual_Grid
+Individual = Individual_DE
 
 
 def generate_successors(population, method):
@@ -528,7 +539,7 @@ def ga():
                     break
                 # STUDENT Also consider using FI-2POP as in the Sorenson & Pasquier paper
                 gentime = time.time()
-                method = 1
+                method = 0
                 next_population = generate_successors(population, method)
                 gendone = time.time()
                 print("Generated successors in:", gendone - gentime, "seconds")
@@ -550,7 +561,7 @@ if __name__ == "__main__":
     print("Best fitness: " + str(best.fitness()))
     now = time.strftime("%m_%d_%H_%M_%S")
     # STUDENT You can change this if you want to blast out the whole generation, or ten random samples, or...
-    #for k in range(0, 10):
-    #    with open("levels/" + now + "_" + str(k) + ".txt", 'w') as f:
-    #        for row in final_gen[k].to_level():
-    #            f.write("".join(row) + "\n")
+    for k in range(0, 10):
+        with open("levels/" + now + "_" + str(k) + ".txt", 'w') as f:
+            for row in final_gen[k].to_level():
+                f.write("".join(row) + "\n")
